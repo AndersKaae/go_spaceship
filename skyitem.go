@@ -11,11 +11,11 @@ type SkyItem struct {
 	speed    float32
 }
 
-func NewSkyItem(name string, position rl.Vector2, texturePath string) *SkyItem {
+func NewSkyItem(name string, position rl.Vector2, cloud rl.Texture2D) *SkyItem {
 	skyItem := SkyItem{
 		name:     name,
 		position: position,
-		texture:  createTextureFromImage(texturePath, 0.1),
+		texture:  cloud,
 		speed:    0.5,
 	}
 	skyObjectsList = append(skyObjectsList, skyItem)

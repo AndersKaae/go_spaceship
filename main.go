@@ -11,7 +11,6 @@ import (
 const (
 	screenWidth      = int32(450)
 	screenHeight     = int32(800)
-	scaleFactor      = 0.05 // Scale down the spaceship to 5% of its original size
 	maxSpeed         = 20
 	terminalVelocity = -20
 	skyR             = 189
@@ -32,6 +31,23 @@ var (
 
 type Sky struct {
 	r, g, b, a uint8
+}
+
+type textures struct {
+	spaceship    rl.Texture2D
+	spaceshipOff rl.Texture2D
+	dustCloud    rl.Texture2D
+	cloud        rl.Texture2D
+	ground       rl.Texture2D
+}
+
+func loadTextures() textures {
+	return textures{
+		spaceship:    createTextureFromImage("/graphics/spaceship.png", 0.05),
+		spaceshipOff: createTextureFromImage("/graphics/spaceshipOff.png", 0.05),
+		dustCloud:    createTextureFromImage("/graphics/dustCloud.png", 0.1),
+		cloud:        createTextureFromImage("/graphics/cloud.png", 0.1),
+	}
 }
 
 func transitionSkyToSpace(sky Sky, altitude int32, playerSpaceship *Spaceship) Sky {
@@ -154,13 +170,10 @@ func main() {
 
 	rl.SetTargetFPS(60)
 
-	// Load the game textures
-	spaceship := createTextureFromImage("/graphics/spaceship.png", 0.05)
-	spaceshipOff := createTextureFromImage("/graphics/spaceshipOff.png", 0.05)
-	dustCloudTexture := createTextureFromImage("/graphics/dustCloud.png", 0.10)
+	textures := loadTextures()
 
 	// Create the spaceship struct
-	playerSpaceship := NewSpaceship(spaceshipOff)
+	playerSpaceship := NewSpaceship(textures.spaceshipOff)
 
 	// Generate stars once
 	generateStars()
@@ -170,7 +183,7 @@ func main() {
 
 	for !rl.WindowShouldClose() {
 		updateStars(playerSpaceship.speed)
-		renderScene(spaceship, spaceshipOff, dustCloudTexture, playerSpaceship, ground)
+		renderScene(textures, playerSpaceship, ground)
 	}
 }
 
@@ -213,7 +226,7 @@ func DrawDustCloud(x, y int32, dustCloud rl.Texture2D) {
 	rl.DrawTexture(dustCloud, posX, posY, rl.White)
 }
 
-func renderScene(spaceship, spaceshipOff, dustCloudTexture rl.Texture2D, playerSpaceship *Spaceship, ground *ground) {
+func renderScene(textures textures, playerSpaceship *Spaceship, ground *ground) {
 	rl.BeginDrawing()
 
 	backgroundColor := rl.NewColor(skyColor.r, skyColor.g, skyColor.b, skyColor.a)
@@ -222,9 +235,9 @@ func renderScene(spaceship, spaceshipOff, dustCloudTexture rl.Texture2D, playerS
 	// Count frames
 	frameCounter++
 
-	spaceShipToDraw := spaceshipOff
+	spaceShipToDraw := textures.spaceshipOff
 	if rl.IsKeyDown(rl.KeySpace) {
-		spaceShipToDraw = spaceship
+		spaceShipToDraw = textures.spaceship
 		playerSpaceship.launched = true
 		playerSpaceship.Accelerate()
 	}
@@ -234,8 +247,8 @@ func renderScene(spaceship, spaceshipOff, dustCloudTexture rl.Texture2D, playerS
 	}
 
 	// Detect collision with the ground
-	if playerSpaceship.y >= screenHeight-spaceship.Height && playerSpaceship.speed < 0 {
-		playerSpaceship.y = screenHeight - spaceship.Height
+	if playerSpaceship.y >= screenHeight-textures.spaceship.Height && playerSpaceship.speed < 0 {
+		playerSpaceship.y = screenHeight - textures.spaceship.Height
 		playerSpaceship.speed = 0
 		playerSpaceship.launched = false
 		playerSpaceship.needDustClouds = true
@@ -251,11 +264,11 @@ func renderScene(spaceship, spaceshipOff, dustCloudTexture rl.Texture2D, playerS
 	// This draws the green ground
 	ground.draw(*playerSpaceship)
 
-	heightOverHalf := screenHeight/2 - spaceship.Height/2
+	heightOverHalf := screenHeight/2 - textures.spaceship.Height/2
 
 	cloud1 := findObjectInList("cloud1")
 	if cloud1 == nil {
-		cloud1 = NewSkyItem("cloud1", rl.Vector2{X: 50, Y: 50}, "/graphics/cloud.png")
+		cloud1 = NewSkyItem("cloud1", rl.Vector2{X: 50, Y: 50}, textures.cloud)
 	}
 
 	if playerSpaceship.y > heightOverHalf {
@@ -263,18 +276,18 @@ func renderScene(spaceship, spaceshipOff, dustCloudTexture rl.Texture2D, playerS
 		cloud1.move(0)
 
 	} else {
-		rl.DrawTexture(spaceShipToDraw, playerSpaceship.x, screenHeight/2-spaceship.Height/2, rl.White)
+		rl.DrawTexture(spaceShipToDraw, playerSpaceship.x, screenHeight/2-textures.spaceship.Height/2, rl.White)
 		cloud1.move(int32(playerSpaceship.speed))
 	}
 
 	skyColor = transitionSkyToSpace(skyColor, altitude, playerSpaceship)
 
 	if playerSpaceship.launched && playerSpaceship.needDustClouds {
-		playerSpaceship.SpawnDustClouds(dustCloudTexture)
+		playerSpaceship.SpawnDustClouds(textures.dustCloud)
 	}
 
 	playerSpaceship.UpdateDustClouds()
-	playerSpaceship.DrawDustClouds(dustCloudTexture)
+	playerSpaceship.DrawDustClouds(textures.dustCloud)
 
 	if !playerSpaceship.inSpace {
 		cloud1.draw()
