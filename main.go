@@ -46,6 +46,22 @@ type bissen struct {
 	visible bool
 }
 
+// instantiate the bissen
+func NewBissen(textures textures) *bissen {
+	return &bissen{
+		x:       screenWidth - 10,
+		y:       screenHeight - textures.bissen.Height - 20,
+		visible: true,
+	}
+}
+
+func update(b *bissen) {
+	if rl.IsKeyPressed(rl.KeyR) {
+		b.visible = true
+		b.x = screenWidth - 10
+	}
+}
+
 func loadTextures() textures {
 	return textures{
 		spaceship:    createTextureFromImage("/graphics/spaceship.png", 0.05),
@@ -181,12 +197,8 @@ func main() {
 	// Create the spaceship struct
 	playerSpaceship := NewSpaceship(textures.spaceshipOff)
 
-	// instantiate the bissen
-	b := bissen{
-		x:       screenWidth - 10,
-		y:       screenHeight - textures.bissen.Height - 20,
-		visible: true,
-	}
+	// Instantiate the bissen
+	b := NewBissen(textures)
 
 	// Generate stars once
 	generateStars()
@@ -196,15 +208,8 @@ func main() {
 
 	for !rl.WindowShouldClose() {
 		updateStars(playerSpaceship.speed)
-		update(&b)
-		renderScene(textures, playerSpaceship, &b, ground)
-	}
-}
-
-func update(b *bissen) {
-	if rl.IsKeyPressed(rl.KeyR) {
-		b.visible = true
-		b.x = screenWidth - 10
+		update(b)
+		renderScene(textures, playerSpaceship, b, ground)
 	}
 }
 
