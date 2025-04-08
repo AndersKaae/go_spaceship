@@ -38,7 +38,12 @@ type textures struct {
 	spaceshipOff rl.Texture2D
 	dustCloud    rl.Texture2D
 	cloud        rl.Texture2D
-	ground       rl.Texture2D
+	bissen       rl.Texture2D
+}
+
+type bissen struct {
+	x, y    int32
+	visible bool
 }
 
 func loadTextures() textures {
@@ -47,6 +52,7 @@ func loadTextures() textures {
 		spaceshipOff: createTextureFromImage("/graphics/spaceshipOff.png", 0.05),
 		dustCloud:    createTextureFromImage("/graphics/dustCloud.png", 0.1),
 		cloud:        createTextureFromImage("/graphics/cloud.png", 0.1),
+		bissen:       createTextureFromImage("/graphics/bissen.png", 0.12),
 	}
 }
 
@@ -175,6 +181,13 @@ func main() {
 	// Create the spaceship struct
 	playerSpaceship := NewSpaceship(textures.spaceshipOff)
 
+	// instantiate the bissen
+	b := bissen{
+		x:       screenWidth - 10,
+		y:       screenHeight - textures.bissen.Height - 20,
+		visible: true,
+	}
+
 	// Generate stars once
 	generateStars()
 
@@ -183,7 +196,15 @@ func main() {
 
 	for !rl.WindowShouldClose() {
 		updateStars(playerSpaceship.speed)
-		renderScene(textures, playerSpaceship, ground)
+		update(&b)
+		renderScene(textures, playerSpaceship, &b, ground)
+	}
+}
+
+func update(b *bissen) {
+	if rl.IsKeyPressed(rl.KeyR) {
+		b.visible = true
+		b.x = screenWidth - 10
 	}
 }
 
@@ -226,7 +247,19 @@ func DrawDustCloud(x, y int32, dustCloud rl.Texture2D) {
 	rl.DrawTexture(dustCloud, posX, posY, rl.White)
 }
 
-func renderScene(textures textures, playerSpaceship *Spaceship, ground *ground) {
+func DrawBissen(b *bissen, textures textures) {
+	// Draw the bissen
+	if b.visible {
+		b.x -= 2
+		rl.DrawTexture(textures.bissen, b.x, b.y, rl.White)
+	}
+
+	if b.x < screenWidth/2 {
+		b.visible = false
+	}
+}
+
+func renderScene(textures textures, playerSpaceship *Spaceship, b *bissen, ground *ground) {
 	rl.BeginDrawing()
 
 	backgroundColor := rl.NewColor(skyColor.r, skyColor.g, skyColor.b, skyColor.a)
@@ -264,12 +297,15 @@ func renderScene(textures textures, playerSpaceship *Spaceship, ground *ground) 
 	// This draws the green ground
 	ground.draw(*playerSpaceship)
 
-	heightOverHalf := screenHeight/2 - textures.spaceship.Height/2
+	// This draws the bissen
+	DrawBissen(b, textures)
 
 	cloud1 := findObjectInList("cloud1")
 	if cloud1 == nil {
 		cloud1 = NewSkyItem("cloud1", rl.Vector2{X: 50, Y: 50}, textures.cloud)
 	}
+
+	heightOverHalf := screenHeight/2 - textures.spaceship.Height/2
 
 	if playerSpaceship.y > heightOverHalf {
 		rl.DrawTexture(spaceShipToDraw, playerSpaceship.x, playerSpaceship.y, rl.White)
