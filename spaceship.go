@@ -5,15 +5,16 @@ import (
 )
 
 type Spaceship struct {
-	textureWidth   int32
-	textureHeight  int32
-	centerX        int32
-	x, y           int32
-	speed          float32
-	dustClouds     []DustCloud
-	needDustClouds bool
-	launched       bool
-	inSpace        bool
+	spaceshipTexture rl.Texture2D
+	textureWidth     int32
+	textureHeight    int32
+	centerX          int32
+	x, y             int32
+	speed            float32
+	dustClouds       []DustCloud
+	needDustClouds   bool
+	launched         bool
+	inSpace          bool
 }
 
 type DustCloud struct {
