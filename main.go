@@ -248,14 +248,6 @@ func drawSpaceshipHeight(altitude int32) {
 	}
 }
 
-func DrawDustCloud(x, y int32, dustCloud rl.Texture2D) {
-	posX := x + 10 // or adjust as needed
-	posY := y + 30 // put it slightly under the spaceship
-
-	fmt.Println("Dust cloud position:", posX, posY)
-	rl.DrawTexture(dustCloud, posX, posY, rl.White)
-}
-
 func renderScene(textures textures, playerSpaceship *Spaceship, listOfBisser []bissen, ground *ground) {
 	rl.BeginDrawing()
 
