@@ -20,10 +20,9 @@ func NewBissen(textures textures) *bissen {
 	}
 }
 
-func (b *bissen) Update(listOfBisser []bissen, textures textures) {
+func (b *bissen) Update(listOfBisser *[]bissen, textures textures) {
 	if rl.IsKeyPressed(rl.KeyR) {
-		listOfBisser = append(listOfBisser, *NewBissen(textures))
-		fmt.Print(len(listOfBisser))
+		*listOfBisser = append(*listOfBisser, *NewBissen(textures))
 	}
 }
 

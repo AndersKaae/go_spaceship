@@ -166,7 +166,7 @@ func createTextureFromImage(imagePath string, scale float32) rl.Texture2D {
 
 func update(listOfBisser *[]bissen, textures textures) {
 	for i := range *listOfBisser {
-		(*listOfBisser)[i].Update(*listOfBisser, textures)
+		(*listOfBisser)[i].Update(listOfBisser, textures)
 	}
 }
 
