@@ -41,27 +41,6 @@ type textures struct {
 	bissen       rl.Texture2D
 }
 
-type bissen struct {
-	x, y    int32
-	visible bool
-}
-
-// instantiate the bissen
-func NewBissen(textures textures) *bissen {
-	return &bissen{
-		x:       screenWidth - 10,
-		y:       screenHeight - textures.bissen.Height - 20,
-		visible: true,
-	}
-}
-
-func update(b *bissen) {
-	if rl.IsKeyPressed(rl.KeyR) {
-		b.visible = true
-		b.x = screenWidth - 10
-	}
-}
-
 func loadTextures() textures {
 	return textures{
 		spaceship:    createTextureFromImage("/graphics/spaceship.png", 0.05),
@@ -185,6 +164,12 @@ func createTextureFromImage(imagePath string, scale float32) rl.Texture2D {
 	return texture
 }
 
+func update(listOfBisser *[]bissen, textures textures) {
+	for i := range *listOfBisser {
+		(*listOfBisser)[i].Update(*listOfBisser, textures)
+	}
+}
+
 func main() {
 	// Initialize the window
 	rl.InitWindow(screenWidth, screenHeight, "Bissen til Saturn")
@@ -198,7 +183,8 @@ func main() {
 	playerSpaceship := NewSpaceship(textures.spaceshipOff)
 
 	// Instantiate the bissen
-	b := NewBissen(textures)
+	listOfBisser := []bissen{}
+	listOfBisser = append(listOfBisser, *NewBissen(textures))
 
 	// Generate stars once
 	generateStars()
@@ -208,8 +194,8 @@ func main() {
 
 	for !rl.WindowShouldClose() {
 		updateStars(playerSpaceship.speed)
-		update(b)
-		renderScene(textures, playerSpaceship, b, ground)
+		update(&listOfBisser, textures)
+		renderScene(textures, playerSpaceship, listOfBisser, ground)
 	}
 }
 
@@ -252,19 +238,7 @@ func DrawDustCloud(x, y int32, dustCloud rl.Texture2D) {
 	rl.DrawTexture(dustCloud, posX, posY, rl.White)
 }
 
-func DrawBissen(b *bissen, textures textures) {
-	// Draw the bissen
-	if b.visible {
-		b.x -= 2
-		rl.DrawTexture(textures.bissen, b.x, b.y, rl.White)
-	}
-
-	if b.x < screenWidth/2 {
-		b.visible = false
-	}
-}
-
-func renderScene(textures textures, playerSpaceship *Spaceship, b *bissen, ground *ground) {
+func renderScene(textures textures, playerSpaceship *Spaceship, listOfBisser []bissen, ground *ground) {
 	rl.BeginDrawing()
 
 	backgroundColor := rl.NewColor(skyColor.r, skyColor.g, skyColor.b, skyColor.a)
@@ -303,7 +277,9 @@ func renderScene(textures textures, playerSpaceship *Spaceship, b *bissen, groun
 	ground.draw(*playerSpaceship)
 
 	// This draws the bissen
-	DrawBissen(b, textures)
+	for i := range listOfBisser {
+		listOfBisser[i].Draw(textures)
+	}
 
 	cloud1 := findObjectInList("cloud1")
 	if cloud1 == nil {
