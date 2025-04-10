@@ -165,9 +165,9 @@ func createTextureFromImage(imagePath string, scale float32) rl.Texture2D {
 	return texture
 }
 
-func update(listOfBisser *[]bissen, textures textures) {
+func update(listOfBisser *[]bissen, textures textures, playerSpaceship *Spaceship) {
 	// Handle spawning new bisser globally
-	if rl.IsKeyPressed(rl.KeyR) {
+	if rl.IsKeyPressed(rl.KeyR) && !playerSpaceship.launched {
 		if len(*listOfBisser) < maxBisser {
 			*listOfBisser = append(*listOfBisser, *NewBissen(textures))
 		}
@@ -212,7 +212,7 @@ func main() {
 
 	for !rl.WindowShouldClose() {
 		updateStars(playerSpaceship.speed)
-		update(&listOfBisser, textures)
+		update(&listOfBisser, textures, playerSpaceship)
 		renderScene(textures, playerSpaceship, listOfBisser, ground)
 	}
 }
