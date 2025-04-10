@@ -17,6 +17,7 @@ const (
 	skyG             = 245
 	skyB             = 255
 	starSpeed        = 1.0 // Speed at which stars move downwards
+	maxBisser        = 100
 )
 
 var (
@@ -165,9 +166,26 @@ func createTextureFromImage(imagePath string, scale float32) rl.Texture2D {
 }
 
 func update(listOfBisser *[]bissen, textures textures) {
-	for i := range *listOfBisser {
-		(*listOfBisser)[i].Update(listOfBisser, textures)
+	// Handle spawning new bisser globally
+	if rl.IsKeyPressed(rl.KeyR) {
+		if len(*listOfBisser) < maxBisser {
+			*listOfBisser = append(*listOfBisser, *NewBissen(textures))
+		}
 	}
+
+	// First, update all bisser
+	for i := range *listOfBisser {
+		(*listOfBisser)[i].Update()
+	}
+
+	// Now, remove invisible bisser
+	newList := (*listOfBisser)[:0]
+	for _, b := range *listOfBisser {
+		if b.visible {
+			newList = append(newList, b)
+		}
+	}
+	*listOfBisser = newList
 }
 
 func main() {

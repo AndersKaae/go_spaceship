@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
@@ -20,15 +18,15 @@ func NewBissen(textures textures) *bissen {
 	}
 }
 
-func (b *bissen) Update(listOfBisser *[]bissen, textures textures) {
-	if rl.IsKeyPressed(rl.KeyR) {
-		*listOfBisser = append(*listOfBisser, *NewBissen(textures))
+func (b *bissen) Update() {
+	b.x -= 2
+	if b.x < screenWidth/2 {
+		b.visible = false
 	}
 }
 
 func (b *bissen) Draw(textures textures) {
 	if b.visible {
-		b.x -= 2
 		rl.DrawTexture(textures.bissen, b.x, b.y, rl.White)
 	}
 
