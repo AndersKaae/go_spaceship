@@ -18,6 +18,9 @@ const (
 	skyB             = 255
 	starSpeed        = 1.0 // Speed at which stars move downwards
 	maxBisser        = 100
+	spaceFadeStart   = 1000 // Altitude range for space transition start
+	spaceFadeEnd     = 4000 // Altitude range for space transition
+	planetHeight     = 6000 // Height at which planets are drawn
 )
 
 var (
@@ -40,6 +43,15 @@ type textures struct {
 	dustCloud    rl.Texture2D
 	cloud        rl.Texture2D
 	bissen       rl.Texture2D
+	jupiter      rl.Texture2D
+	mars         rl.Texture2D
+	neptune      rl.Texture2D
+	uranus       rl.Texture2D
+	venus        rl.Texture2D
+	luna         rl.Texture2D
+	earth        rl.Texture2D
+	saturn       rl.Texture2D
+	sun          rl.Texture2D
 }
 
 func loadTextures() textures {
@@ -49,12 +61,29 @@ func loadTextures() textures {
 		dustCloud:    createTextureFromImage("/graphics/dustCloud.png", 0.1),
 		cloud:        createTextureFromImage("/graphics/cloud.png", 0.1),
 		bissen:       createTextureFromImage("/graphics/bissen.png", 0.12),
+		jupiter:      createTextureFromImage("/graphics/jupiterTexture.jpg", 1),
+		mars:         createTextureFromImage("/graphics/marsTexture.jpg", 1),
+		neptune:      createTextureFromImage("/graphics/neptuneTexture.jpg", 1),
+		uranus:       createTextureFromImage("/graphics/uranusTexture.jpg", 1),
+		venus:        createTextureFromImage("/graphics/venusTexture.jpg", 1),
+		luna:         createTextureFromImage("/graphics/lunaTexture.jpg", 1),
+		earth:        createTextureFromImage("/graphics/earthTexture.png", 1),
+		saturn:       createTextureFromImage("/graphics/saturnTexture.png", 1),
+		sun:          createTextureFromImage("/graphics/sunTexture.jpg", 1),
+	}
+}
+
+type shaders struct {
+	cicleMask rl.Shader
+}
+
+func loadShaders() shaders {
+	return shaders{
+		cicleMask: rl.LoadShader("", "shaders/circle_mask.fs"),
 	}
 }
 
 func transitionSkyToSpace(sky Sky, altitude int32, playerSpaceship *Spaceship) Sky {
-	const spaceFadeStart = 500
-	const spaceFadeEnd = 2000
 
 	// Normalize altitude between 0.0 and 1.0, starting from 500
 	normalizedAltitude := float32(altitude-spaceFadeStart) / float32(spaceFadeEnd-spaceFadeStart)
@@ -165,8 +194,7 @@ func createTextureFromImage(imagePath string, scale float32) rl.Texture2D {
 	return texture
 }
 
-func update(listOfBisser *[]bissen, textures textures, playerSpaceship *Spaceship) {
-	// Handle spawning new bisser globally
+func update(listOfBisser *[]bissen, textures textures, playerSpaceship *Spaceship, splashScreen *bool) {
 	if rl.IsKeyPressed(rl.KeyR) && !playerSpaceship.launched {
 		if len(*listOfBisser) < maxBisser {
 			*listOfBisser = append(*listOfBisser, *NewBissen(textures))
@@ -190,12 +218,13 @@ func update(listOfBisser *[]bissen, textures textures, playerSpaceship *Spaceshi
 
 func main() {
 	// Initialize the window
-	rl.InitWindow(screenWidth, screenHeight, "Bissen til Saturn")
+	rl.InitWindow(screenWidth, screenHeight, "Otto i Rummet")
 	defer rl.CloseWindow()
 
 	rl.SetTargetFPS(60)
 
 	textures := loadTextures()
+	shaders := loadShaders()
 
 	// Create the spaceship struct
 	playerSpaceship := NewSpaceship(textures.spaceshipOff)
@@ -207,14 +236,80 @@ func main() {
 	// Generate stars once
 	generateStars()
 
-	// Create the ground
+	// Create planet
+	r := float32(200)
+	gamePlanet := &Planet{
+		radius:  r,
+		texture: textures.mars,
+		speed:   0.4,
+		yPos:    0 - (2 * r),
+		inSpace: true,
+	}
+
+	splashPlanet := &Planet{
+		radius:  r,
+		texture: textures.mars,
+		speed:   0.4,
+		yPos:    0 + r,
+		inSpace: false,
+	}
+
+	planetIndex := 2
+
 	ground := NewGround()
 
+	splashScreen := true
+
 	for !rl.WindowShouldClose() {
+		if splashScreen {
+			updateSplashscreen(splashPlanet, &planetIndex, textures)
+			showSplashScreen(splashPlanet, shaders, playerSpaceship, &splashScreen)
+			continue
+		}
+		gamePlanet.texture = splashPlanet.texture
 		updateStars(playerSpaceship.speed)
-		update(&listOfBisser, textures, playerSpaceship)
-		renderScene(textures, playerSpaceship, listOfBisser, ground)
+		update(&listOfBisser, textures, playerSpaceship, &splashScreen)
+		renderScene(textures, shaders, playerSpaceship, listOfBisser, ground, gamePlanet)
 	}
+}
+
+func showSplashScreen(planet *Planet, shaders shaders, playerSpaceship *Spaceship, splashScreen *bool) {
+	rl.BeginDrawing()
+	rl.ClearBackground(rl.Black)
+	planet.Draw(shaders.cicleMask, altitude, playerSpaceship.speed)
+	rl.DrawText("Otto i Rummet", screenWidth/7, screenHeight-700, 40, rl.White)
+	rl.DrawText("Press any key", screenWidth/7, screenHeight-100, 40, rl.Gray)
+	if rl.IsKeyPressed(rl.KeySpace) {
+		*splashScreen = false
+	}
+	rl.EndDrawing()
+}
+
+func updateSplashscreen(planet *Planet, planetIndex *int, textures textures) {
+	planetTextures := []rl.Texture2D{
+		textures.jupiter,
+		textures.mars,
+		textures.neptune,
+		textures.uranus,
+		textures.venus,
+		textures.luna,
+		textures.earth,
+		textures.saturn,
+		textures.sun,
+	}
+	if rl.IsKeyPressed(rl.KeyA) {
+		*planetIndex--
+		if *planetIndex < 0 {
+			*planetIndex = len(planetTextures) - 1
+		}
+	}
+	if rl.IsKeyPressed(rl.KeyD) {
+		*planetIndex++
+		if *planetIndex >= len(planetTextures) {
+			*planetIndex = 0
+		}
+	}
+	planet.texture = planetTextures[*planetIndex]
 }
 
 func drawSpeed(speed float32, frameCounter int32, skyColor Sky, textY int32) {
@@ -248,7 +343,7 @@ func drawSpaceshipHeight(altitude int32) {
 	}
 }
 
-func renderScene(textures textures, playerSpaceship *Spaceship, listOfBisser []bissen, ground *ground) {
+func renderScene(textures textures, shaders shaders, playerSpaceship *Spaceship, listOfBisser []bissen, ground *ground, jupiter *Planet) {
 	rl.BeginDrawing()
 
 	backgroundColor := rl.NewColor(skyColor.r, skyColor.g, skyColor.b, skyColor.a)
@@ -256,6 +351,10 @@ func renderScene(textures textures, playerSpaceship *Spaceship, listOfBisser []b
 
 	// Count frames
 	frameCounter++
+
+	if checkIfSpace(skyColor) {
+		renderStars()
+	}
 
 	spaceShipToDraw := textures.spaceshipOff
 	if rl.IsKeyDown(rl.KeySpace) {
@@ -277,12 +376,6 @@ func renderScene(textures textures, playerSpaceship *Spaceship, listOfBisser []b
 		altitude = 0
 	}
 
-	playerSpaceship.y -= int32(playerSpaceship.speed)
-
-	altitude = altitude + int32(playerSpaceship.speed)
-	drawSpeed(playerSpaceship.speed, frameCounter, skyColor, 10)
-	drawSpaceshipHeight(altitude)
-
 	// This draws the green ground
 	ground.draw(*playerSpaceship)
 
@@ -290,6 +383,8 @@ func renderScene(textures textures, playerSpaceship *Spaceship, listOfBisser []b
 	for i := range listOfBisser {
 		listOfBisser[i].Draw(textures)
 	}
+
+	jupiter.Draw(shaders.cicleMask, altitude, playerSpaceship.speed)
 
 	cloud1 := findObjectInList("cloud1")
 	if cloud1 == nil {
@@ -320,9 +415,11 @@ func renderScene(textures textures, playerSpaceship *Spaceship, listOfBisser []b
 		cloud1.draw()
 	}
 
-	if checkIfSpace(skyColor) {
-		renderStars()
-	}
+	playerSpaceship.y -= int32(playerSpaceship.speed)
+
+	altitude = altitude + int32(playerSpaceship.speed)
+	drawSpeed(playerSpaceship.speed, frameCounter, skyColor, 10)
+	drawSpaceshipHeight(altitude)
 
 	rl.EndDrawing()
 }
