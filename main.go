@@ -246,23 +246,27 @@ func main() {
 		inSpace: true,
 	}
 
+	r = float32(1)
 	splashPlanet := &Planet{
-		radius:  r,
+		radius:  0,
 		texture: textures.mars,
 		speed:   0.4,
 		yPos:    0 + r,
 		inSpace: false,
 	}
 
-	planetIndex := 2
+	// If we increase  the number of planets, we need to change the planetIndex
+	planetIndex := int(rl.GetRandomValue(0, 8))
 
 	ground := NewGround()
 
 	splashScreen := true
 
+	radiusProgress := 0.0
+
 	for !rl.WindowShouldClose() {
 		if splashScreen {
-			updateSplashscreen(splashPlanet, &planetIndex, textures)
+			updateSplashscreen(splashPlanet, &planetIndex, textures, &radiusProgress)
 			showSplashScreen(splashPlanet, shaders, playerSpaceship, &splashScreen)
 			continue
 		}
@@ -275,17 +279,26 @@ func main() {
 
 func showSplashScreen(planet *Planet, shaders shaders, playerSpaceship *Spaceship, splashScreen *bool) {
 	rl.BeginDrawing()
+	renderStars()
 	rl.ClearBackground(rl.Black)
 	planet.Draw(shaders.cicleMask, altitude, playerSpaceship.speed)
-	rl.DrawText("Otto i Rummet", screenWidth/7, screenHeight-700, 40, rl.White)
-	rl.DrawText("Press any key", screenWidth/7, screenHeight-100, 40, rl.Gray)
+	centerTekst("Otto i Rummet", screenHeight-700)
+	centerTekst(planet.name, screenHeight-200)
+	centerTekst("Prese space key", screenHeight-100)
 	if rl.IsKeyPressed(rl.KeySpace) {
 		*splashScreen = false
 	}
 	rl.EndDrawing()
 }
 
-func updateSplashscreen(planet *Planet, planetIndex *int, textures textures) {
+func centerTekst(text string, y int32) {
+	fontSize := int32(40)
+	textWidth := rl.MeasureText(text, fontSize)
+	x := (screenWidth - textWidth) / 2
+	rl.DrawText(text, x, y, fontSize, rl.White)
+}
+
+func updateSplashscreen(planet *Planet, planetIndex *int, textures textures, progress *float64) {
 	planetTextures := []rl.Texture2D{
 		textures.jupiter,
 		textures.mars,
@@ -297,19 +310,56 @@ func updateSplashscreen(planet *Planet, planetIndex *int, textures textures) {
 		textures.saturn,
 		textures.sun,
 	}
+
+	planetNames := []string{
+		"Jupiter",
+		"Mars",
+		"Neptun",
+		"Uranus",
+		"Venus",
+		"Månen",
+		"Jorden",
+		"Saturn",
+		"Solen",
+	}
+
+	planet.name = planetNames[*planetIndex]
+
+	var changed bool
+
 	if rl.IsKeyPressed(rl.KeyA) {
 		*planetIndex--
+		changed = true
 		if *planetIndex < 0 {
 			*planetIndex = len(planetTextures) - 1
 		}
 	}
 	if rl.IsKeyPressed(rl.KeyD) {
 		*planetIndex++
+		changed = true
 		if *planetIndex >= len(planetTextures) {
 			*planetIndex = 0
 		}
 	}
-	planet.texture = planetTextures[*planetIndex]
+	if changed {
+		planet.texture = planetTextures[*planetIndex]
+		planet.radius = 1.0
+		*progress = 0.0
+		planet.initialized = false // force re-init render texture
+	}
+
+	// Update radiusProgress toward 1
+	if planet.radius < 199 {
+		*progress = approachOne(*progress)
+		planet.radius = 200 * float32(*progress)
+		planet.yPos = float32(screenHeight)/2 - planet.radius
+		println("Progress:", planet.radius, "Planet Index:", *planetIndex)
+	}
+}
+
+func approachOne(current float64) float64 {
+	approachRate := 0.01 // Adjust this value to control the speed of approach
+	return current + (1-current)*approachRate
 }
 
 func drawSpeed(speed float32, frameCounter int32, skyColor Sky, textY int32) {

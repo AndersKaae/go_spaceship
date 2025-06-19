@@ -5,15 +5,16 @@ import (
 )
 
 type Planet struct {
+	name          string
 	radius        float32
 	texture       rl.Texture2D
 	speed         float32
 	textureOffset float32
 	yPos          float32 // Vertical position of the planet
 	inSpace       bool
-
-	renderTex   rl.RenderTexture2D
-	initialized bool
+	renderTex     rl.RenderTexture2D
+	initialized   bool
+	lastRadius    float32 // Last radius used for rendering
 }
 
 func (p *Planet) Draw(shader rl.Shader, altitude int32, speed float32) {
@@ -26,11 +27,17 @@ func (p *Planet) Draw(shader rl.Shader, altitude int32, speed float32) {
 	}
 
 	renderSize := int32(p.radius * 2)
+	if renderSize < 4 {
+		return // Skip drawing if too small
+	}
 
-	// One-time render texture allocation
-	if !p.initialized {
+	if !p.initialized || p.lastRadius != p.radius {
+		if p.initialized {
+			rl.UnloadRenderTexture(p.renderTex)
+		}
 		p.renderTex = rl.LoadRenderTexture(renderSize, renderSize)
 		p.initialized = true
+		p.lastRadius = p.radius
 	}
 
 	// Simulate horizontal scrolling of texture (planet rotation)
@@ -62,7 +69,7 @@ func (p *Planet) Draw(shader rl.Shader, altitude int32, speed float32) {
 	rl.EndTextureMode()
 
 	// --- APPLY SHADER AND DRAW TO SCREEN ---
-	center := []float32{p.radius, p.radius}
+	center := []float32{float32(p.renderTex.Texture.Width) / 2, float32(p.renderTex.Texture.Height) / 2}
 	radiusUniform := []float32{p.radius}
 	rl.SetShaderValue(shader, rl.GetShaderLocation(shader, "center"), center, rl.ShaderUniformVec2)
 	rl.SetShaderValue(shader, rl.GetShaderLocation(shader, "radius"), radiusUniform, rl.ShaderUniformFloat)
