@@ -16,6 +16,7 @@ type Planet struct {
 	initialized       bool
 	lastRadius        float32 // Last radius used for rendering
 	nameIndex         int
+	planetFontColor   rl.Color // Color of the planet name text in the splash screen
 	potentialNames    []string
 	potentialTextures []rl.Texture2D
 }
@@ -58,6 +59,7 @@ func initSplashPlanet(planet *Planet, textures textures) *Planet {
 		nameIndex:         planetIndex,
 		potentialNames:    planetNames,
 		potentialTextures: planetTextures,
+		planetFontColor:   getAverageColor(planetTextures[planetIndex]),
 	}
 	return splashPlanet
 }
@@ -72,9 +74,6 @@ func (p *Planet) Draw(shader rl.Shader, altitude int32, speed float32) {
 	}
 
 	renderSize := int32(p.radius * 2)
-	if renderSize < 4 {
-		return // Skip drawing if too small
-	}
 
 	if !p.initialized || p.lastRadius != p.radius {
 		if p.initialized {
