@@ -283,7 +283,7 @@ func showSplashScreen(planet *Planet, shaders shaders, playerSpaceship *Spaceshi
 	rl.ClearBackground(rl.Black)
 	planet.Draw(shaders.cicleMask, altitude, playerSpaceship.speed)
 	centerTekst("Otto i Rummet", screenHeight-700)
-	centerTekst(planet.name, screenHeight-200)
+	centerTekst(planet.name, screenHeight-180)
 	centerTekst("Prese space key", screenHeight-100)
 	if rl.IsKeyPressed(rl.KeySpace) {
 		*splashScreen = false
@@ -351,9 +351,10 @@ func updateSplashscreen(planet *Planet, planetIndex *int, textures textures, pro
 	// Update radiusProgress toward 1
 	if planet.radius < 199 {
 		*progress = approachOne(*progress)
-		planet.radius = 200 * float32(*progress)
-		planet.yPos = float32(screenHeight)/2 - planet.radius
-		println("Progress:", planet.radius, "Planet Index:", *planetIndex)
+		if (*progress*200)-float64(planet.radius) > 1 { // Only update the sprite if the radius has changed significantly
+			planet.radius = 200 * float32(*progress)
+			planet.yPos = float32(screenHeight)/2 - planet.radius
+		}
 	}
 }
 
