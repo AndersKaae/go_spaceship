@@ -5,16 +5,61 @@ import (
 )
 
 type Planet struct {
-	name          string
-	radius        float32
-	texture       rl.Texture2D
-	speed         float32
-	textureOffset float32
-	yPos          float32 // Vertical position of the planet
-	inSpace       bool
-	renderTex     rl.RenderTexture2D
-	initialized   bool
-	lastRadius    float32 // Last radius used for rendering
+	name              string
+	radius            float32
+	texture           rl.Texture2D
+	speed             float32
+	textureOffset     float32
+	yPos              float32 // Vertical position of the planet
+	inSpace           bool
+	renderTex         rl.RenderTexture2D
+	initialized       bool
+	lastRadius        float32 // Last radius used for rendering
+	nameIndex         int
+	potentialNames    []string
+	potentialTextures []rl.Texture2D
+}
+
+func initSplashPlanet(planet *Planet, textures textures) *Planet {
+	planetTextures := []rl.Texture2D{
+		textures.jupiter,
+		textures.mars,
+		textures.neptune,
+		textures.uranus,
+		textures.venus,
+		textures.luna,
+		textures.earth,
+		textures.saturn,
+		textures.sun,
+	}
+
+	planetNames := []string{
+		"Jupiter",
+		"Mars",
+		"Neptun",
+		"Uranus",
+		"Venus",
+		"Månen",
+		"Jorden",
+		"Saturn",
+		"Solen",
+	}
+	r := float32(1)
+
+	planetIndex := int(rl.GetRandomValue(0, 8))
+
+	splashPlanet := &Planet{
+		radius:            0,
+		texture:           planetTextures[planetIndex],
+		name:              planetNames[planetIndex],
+		speed:             0.4,
+		yPos:              0 + r,
+		inSpace:           false,
+		nameIndex:         planetIndex,
+		potentialNames:    planetNames,
+		potentialTextures: planetTextures,
+	}
+	return splashPlanet
 }
 
 func (p *Planet) Draw(shader rl.Shader, altitude int32, speed float32) {
