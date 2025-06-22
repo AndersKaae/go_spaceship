@@ -20,7 +20,8 @@ const (
 	maxBisser        = 100
 	spaceFadeStart   = 1000 // Altitude range for space transition start
 	spaceFadeEnd     = 4000 // Altitude range for space transition
-	planetHeight     = 6000 // Height at which planets are drawn
+	planetAltitude   = 2000 // Height at which planets are drawn
+
 )
 
 var (
@@ -31,6 +32,9 @@ var (
 	altitude       int32 = 0
 	skyObjectsList []SkyItem
 	dustCloudsList []DustCloud
+
+	splashScreen = true
+	landing      = false
 )
 
 type Sky struct {
@@ -194,7 +198,7 @@ func createTextureFromImage(imagePath string, scale float32) rl.Texture2D {
 	return texture
 }
 
-func update(listOfBisser *[]bissen, textures textures, playerSpaceship *Spaceship, splashScreen *bool) {
+func update(listOfBisser *[]bissen, textures textures, planet *Planet, playerSpaceship *Spaceship, splashScreen *bool) {
 	if rl.IsKeyPressed(rl.KeyR) && !playerSpaceship.launched {
 		if len(*listOfBisser) < maxBisser {
 			*listOfBisser = append(*listOfBisser, *NewBissen(textures))
@@ -217,6 +221,12 @@ func update(listOfBisser *[]bissen, textures textures, playerSpaceship *Spaceshi
 
 	if rl.IsKeyDown(rl.KeyQ) {
 		*splashScreen = true
+	}
+
+	if planet.yPos == float32(playerSpaceship.y) {
+		fmt.Print("REZISING")
+
+		planet.Resize(10)
 	}
 }
 
@@ -254,8 +264,6 @@ func main() {
 
 	ground := NewGround()
 
-	splashScreen := true
-
 	radiusProgress := 0.0
 
 	for !rl.WindowShouldClose() {
@@ -264,10 +272,16 @@ func main() {
 			showSplashScreen(splashPlanet, shaders, playerSpaceship, &splashScreen)
 			continue
 		}
-		gamePlanet.texture = splashPlanet.texture
-		updateStars(playerSpaceship.speed)
-		update(&listOfBisser, textures, playerSpaceship, &splashScreen)
-		renderScene(textures, shaders, playerSpaceship, listOfBisser, ground, gamePlanet)
+		if !landing {
+			gamePlanet.texture = splashPlanet.texture
+			updateStars(playerSpaceship.speed)
+			update(&listOfBisser, textures, gamePlanet, playerSpaceship, &splashScreen)
+			renderScene(textures, shaders, playerSpaceship, listOfBisser, ground, gamePlanet)
+		}
+		if landing {
+			splashPlanet = initSplashPlanet(gamePlanet, textures)
+			splashScreen = true
+		}
 	}
 }
 
@@ -302,7 +316,7 @@ func drawSpaceshipHeight(altitude int32) {
 	}
 }
 
-func renderScene(textures textures, shaders shaders, playerSpaceship *Spaceship, listOfBisser []bissen, ground *ground, jupiter *Planet) {
+func renderScene(textures textures, shaders shaders, playerSpaceship *Spaceship, listOfBisser []bissen, ground *ground, planet *Planet) {
 	rl.BeginDrawing()
 
 	backgroundColor := rl.NewColor(skyColor.r, skyColor.g, skyColor.b, skyColor.a)
@@ -343,7 +357,9 @@ func renderScene(textures textures, shaders shaders, playerSpaceship *Spaceship,
 		listOfBisser[i].Draw(textures)
 	}
 
-	jupiter.Draw(shaders.cicleMask, altitude, playerSpaceship.speed)
+	if playerSpaceship.inSpace && altitude > planetAltitude {
+		planet.Draw(shaders.cicleMask, altitude, playerSpaceship.speed)
+	}
 
 	cloud1 := findObjectInList("cloud1")
 	if cloud1 == nil {

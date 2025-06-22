@@ -85,12 +85,12 @@ func updateSplashscreen(planet *Planet, progress *float64) {
 	}
 
 	// Update radiusProgress toward 1
-	if planet.radius < 199 {
+	// Update radiusProgress toward 1
+	if planet.radius <= 200 {
 		*progress = approachOne(*progress)
-		if (*progress*200)-float64(planet.radius) > 1 { // Only update the sprite if the radius has changed significantly
-			planet.radius = 200 * float32(*progress)
-			planet.yPos = float32(screenHeight)/2 - planet.radius
-		}
+		targetRadius := 200 * float32(*progress)
+		delta := targetRadius - planet.radius
+		planet.Resize(delta)
 	}
 }
 

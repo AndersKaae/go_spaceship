@@ -2,6 +2,7 @@ package main
 
 import (
 	rl "github.com/gen2brain/raylib-go/raylib"
+	"math"
 )
 
 type Planet struct {
@@ -64,16 +65,36 @@ func initSplashPlanet(planet *Planet, textures textures) *Planet {
 	return splashPlanet
 }
 
+func (p *Planet) Resize(delta float32) {
+	const minRadius = 1.0
+	const epsilon = 0.5
+
+	newRadius := p.radius + delta
+	if newRadius < minRadius {
+		newRadius = minRadius
+	}
+
+	if math.Abs(float64(newRadius-p.radius)) > epsilon {
+		p.radius = newRadius
+		p.yPos = float32(screenHeight)/2 - p.radius
+		p.initialized = false // re-init render texture for new size
+	}
+}
+
 func (p *Planet) Draw(shader rl.Shader, altitude int32, speed float32) {
-	if p.inSpace && altitude < planetHeight {
-		return // Don't draw planets if altitude is too low
-	}
-
-	if p.yPos < float32(screenHeight/2)-p.radius {
-		p.yPos += speed * 0.02 // Adjust vertical position based on speed change back to 0.02
-	}
-
 	renderSize := int32(p.radius * 2)
+
+	// When the spadeship and the planet are in the same sace, the planet should not move
+	if p.yPos <= float32(screenHeight/2)-p.radius {
+		p.yPos += speed * 0.02 // Adjust vertical position based on speed change back to 0.02
+	} else {
+		if p.radius <= 800 {
+			p.Resize(5)
+		}
+		if p.radius >= 800 {
+			landing = true
+		}
+	}
 
 	if !p.initialized || p.lastRadius != p.radius {
 		if p.initialized {
@@ -132,6 +153,5 @@ func (p *Planet) Draw(shader rl.Shader, altitude int32, speed float32) {
 		screenPos,
 		rl.White,
 	)
-
 	rl.EndShaderMode()
 }
